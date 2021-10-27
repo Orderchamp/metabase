@@ -1,0 +1,27 @@
+:root {
+    --default-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* Bit smaller legends */
+.LegendItem {
+    font-size: 1em !important;
+}
+
+/* Hide the embed footer with the Metabase logo and export link  */
+.EmbedFrame-footer,
+.Icon.Icon-download {
+    display: none !important;
+}
+
+.ScalarValue, .ScalarValue:hover,
+.Scalar-title, .Scalar-title:hover {
+    color: #333;
+}
+
+.ScalarValue {
+    font-weight: 300;
+}
+
+.Scalar-title {
+    font-weight: 500;
+}
