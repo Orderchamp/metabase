@@ -4,7 +4,7 @@
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
-/* Bit smaller legends */
+/* Use smaller legens to blend in more */
 .LegendItem {
   font-size: 1em !important;
 }
@@ -15,6 +15,7 @@
   display: none !important;
 }
 
+/* Make counters look more like the dashboard metrics */
 .ScalarValue,
 .ScalarValue:hover,
 .Scalar-title,
