@@ -27,6 +27,7 @@
   font-weight: 300;
 }
 
+/* Hide the counter titles since they can't be translated */
 .Scalar-title {
-  font-weight: 500;
+  display: none;
 }
