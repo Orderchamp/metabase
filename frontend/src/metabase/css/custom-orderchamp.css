@@ -1,0 +1,34 @@
+:root {
+  --default-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* Use smaller legens to blend in more */
+.LegendItem {
+  font-size: 1em !important;
+}
+
+/* Hide the embed footer with the Metabase logo and export link  */
+.EmbedFrame-footer,
+.Icon.Icon-download {
+  display: none !important;
+}
+
+/* Make counters look more like the dashboard metrics */
+.ScalarValue,
+.ScalarValue:hover,
+.Scalar-title,
+.Scalar-title:hover {
+  color: #333 !important;
+  font-size: 2.6rem;
+}
+
+.ScalarValue {
+  font-weight: 300;
+}
+
+/* Hide the counter titles since they can't be translated */
+.Scalar-title {
+  display: none;
+}
