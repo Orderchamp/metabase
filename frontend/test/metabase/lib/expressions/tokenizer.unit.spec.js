@@ -2,7 +2,6 @@ import {
   tokenize,
   TOKEN as T,
   OPERATOR as OP,
-  countMatchingParentheses,
 } from "metabase/lib/expressions/tokenizer";
 
 describe("metabase/lib/expressions/tokenizer", () => {
@@ -65,6 +64,18 @@ describe("metabase/lib/expressions/tokenizer", () => {
   it("should catch unterminated string literals", () => {
     expect(errors("'single")[0].message).toEqual("Missing closing quotes");
     expect(errors('"double')[0].message).toEqual("Missing closing quotes");
+  });
+
+  it("should continue to tokenize when encountering an unterminated string literal", () => {
+    expect(types("CONCAT(universe') = [answer]")).toEqual([
+      T.Identifier,
+      T.Operator,
+      T.Identifier,
+      T.String,
+      T.Operator,
+      T.Operator,
+      T.Identifier,
+    ]);
   });
 
   it("should tokenize identifiers", () => {
@@ -139,15 +150,5 @@ describe("metabase/lib/expressions/tokenizer", () => {
     expect(errors("!")[0].message).toEqual("Invalid character: !");
     expect(errors(" % @")[1].message).toEqual("Invalid character: @");
     expect(errors("    #")[0].pos).toEqual(4);
-  });
-
-  it("should count matching parentheses", () => {
-    const count = expr => countMatchingParentheses(tokenize(expr).tokens);
-    expect(count("()")).toEqual(0);
-    expect(count("(")).toEqual(1);
-    expect(count(")")).toEqual(-1);
-    expect(count("(A+(")).toEqual(2);
-    expect(count("SUMIF(")).toEqual(1);
-    expect(count("COUNTIF(Deal))")).toEqual(-1);
   });
 });

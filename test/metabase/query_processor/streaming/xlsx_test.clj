@@ -61,7 +61,14 @@
         (is (= "#,##0E+0"  (format-string {::mb.viz/decimals -1, ::mb.viz/number-style "scientific"})))
         (is (= "[$$]#,##0" (format-string {::mb.viz/decimals -1,
                                            ::mb.viz/currency-in-header false,
-                                           ::mb.viz/number-style "currency"}))))
+                                           ::mb.viz/number-style "currency"})))
+
+        ;; Thousands separator can be omitted
+        (is (= ["###0" "###0.##"]   (format-string {::mb.viz/number-separators "."})))
+        ;; Custom separators are not supported
+        (is (= ["#,##0" "#,##0.##"] (format-string {::mb.viz/number-separators ", "})))
+        (is (= ["#,##0" "#,##0.##"] (format-string {::mb.viz/number-separators ".,"})))
+        (is (= ["#,##0" "#,##0.##"] (format-string {::mb.viz/number-separators ".’"}))))
 
       (testing "Scale"
         ;; Scale should not affect format string since it is applied to the actual data prior to export
@@ -419,7 +426,13 @@
                (second (xlsx-export [{:id 0, :name "Col"}] {} [[#t "10:12:06Z-03:21"]])))))
       (testing "ZonedDateTime"
         (is (= [#inst "2020-03-28T10:12:06.000-00:00"]
-               (second (xlsx-export [{:id 0, :name "Col"}] {} [[#t "2020-03-28T10:12:06Z"]]))))))))
+               (second (xlsx-export [{:id 0, :name "Col"}] {} [[#t "2020-03-28T10:12:06Z"]])))))))
+  (testing "Strings representing country names/codes don't error when *parse-temporal-string-values* is true (#18724)"
+    (binding [xlsx/*parse-temporal-string-values* true]
+      (is (= ["GB"]
+             (second (xlsx-export [{:id 0, :name "Col"}] {} [["GB"]]))))
+      (is (= ["Portugal"]
+             (second (xlsx-export [{:id 0, :name "Col"}] {} [["Portugal"]])))))))
 
 (defrecord ^:private SampleNastyClass [^String v])
 

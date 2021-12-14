@@ -1,7 +1,8 @@
+/* eslint-disable react/prop-types */
 import React, { Component } from "react";
 import { Link } from "react-router";
 import cx from "classnames";
-import { t } from "ttag";
+import { jt, t } from "ttag";
 
 import fitViewport from "metabase/hoc/FitViewPort";
 
@@ -12,13 +13,6 @@ import ExplorePane from "metabase/components/ExplorePane";
 import MetabotLogo from "metabase/components/MetabotLogo";
 import ProgressBar from "metabase/components/ProgressBar";
 import Quotes from "metabase/components/Quotes";
-
-type Props = {
-  params: {
-    databaseId?: number,
-  },
-  fitClassNames: string,
-};
 
 const QUOTES = [
   t`Metabot is admiring your integers…`,
@@ -32,7 +26,6 @@ const QUOTES = [
 
 @fitViewport
 export default class PostSetupApp extends Component {
-  props: Props;
   render() {
     return (
       <div className={cx(this.props.fitClassNames, "align-center")}>
@@ -74,12 +67,14 @@ export default class PostSetupApp extends Component {
                 );
               }
               return (
-                <Card px={3} py={1}>
+                <Card p={3}>
                   <ExplorePane
                     candidates={candidates}
                     description={
                       isSample
-                        ? t`Once you connect your own data, I can show you some automatic explorations called x-rays. Here are some examples with sample data.`
+                        ? jt`While we’re syncing your data, you can check out these explorations of our ${(
+                            <strong>{t`Sample Dataset`}</strong>
+                          )}. Hope you like them!`
                         : t`I took a look at the data you just connected, and I have some explorations of interesting things I found. Hope you like them!`
                     }
                   />

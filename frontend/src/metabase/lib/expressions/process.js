@@ -4,26 +4,21 @@ export function processSource(options) {
   // https://github.com/metabase/metabase/issues/13472
   const parse = require("./parser").parse;
   const compile = require("./compile").compile;
-  const suggest = require("./suggest").suggest;
-  const syntax = require("./syntax").syntax;
 
-  const { source, targetOffset } = options;
+  const { source } = options;
 
   let expression;
-  let suggestions = [];
-  let helpText;
-  let syntaxTree;
   let compileError;
 
   // PARSE
-  const { cst, tokenVector, parserErrors, typeErrors } = parse({
+  const { cst, tokenVector, parserErrors } = parse({
     ...options,
     recover: true,
   });
 
   // COMPILE
-  if (typeErrors.length > 0 || parserErrors.length > 0) {
-    compileError = typeErrors.concat(parserErrors);
+  if (parserErrors.length > 0) {
+    compileError = parserErrors;
   } else {
     try {
       expression = compile({ cst, tokenVector, ...options });
@@ -33,32 +28,9 @@ export function processSource(options) {
     }
   }
 
-  // SUGGEST
-  if (targetOffset != null) {
-    try {
-      ({ suggestions = [], helpText } = suggest({
-        cst,
-        tokenVector,
-        ...options,
-      }));
-    } catch (e) {
-      console.warn("suggest error", e);
-    }
-  }
-
-  // SYNTAX
-  try {
-    syntaxTree = syntax({ cst, tokenVector, ...options });
-  } catch (e) {
-    console.warn("syntax error", e);
-  }
-
   return {
     source,
     expression,
-    helpText,
-    suggestions,
-    syntaxTree,
     compileError,
   };
 }

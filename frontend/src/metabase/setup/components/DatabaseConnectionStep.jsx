@@ -9,7 +9,6 @@ import StepTitle from "./StepTitle";
 import CollapsedStep from "./CollapsedStep";
 
 import { trackStructEvent } from "metabase/lib/analytics";
-import { DEFAULT_SCHEDULES } from "metabase/admin/databases/database";
 import Databases from "metabase/entities/databases";
 import {
   trackAddDataLaterClicked,
@@ -61,27 +60,14 @@ export default class DatabaseConnectionStep extends Component {
       }
     }
 
-    if (database.details["let-user-control-scheduling"]) {
-      // Show the scheduling step if user has chosen to control scheduling manually
-      // Add the default schedules because DatabaseSchedulingForm requires them and update the db state
-      this.props.setDatabaseDetails({
-        nextStep: this.props.stepNumber + 1,
-        details: {
-          ...database,
-          is_full_sync: true,
-          schedules: DEFAULT_SCHEDULES,
-        },
-      });
-    } else {
-      // now that they are good, store them
-      this.props.setDatabaseDetails({
-        // skip the scheduling step
-        nextStep: this.props.stepNumber + 2,
-        details: database,
-      });
+    // now that they are good, store them
+    this.props.setDatabaseDetails({
+      // skip the scheduling step
+      nextStep: this.props.stepNumber + 2,
+      details: database,
+    });
 
-      trackStructEvent("Setup", "Database Step", database.engine);
-    }
+    trackStructEvent("Setup", "Database Step", database.engine);
   };
 
   skipDatabase = () => {
@@ -145,31 +131,33 @@ export default class DatabaseConnectionStep extends Component {
         >
           <StepTitle title={stepText} circleText={String(stepNumber)} />
 
-          <div className="Form-field">
-            {t`You’ll need some info about your database, like the username and password. If you don’t have that right now, Metabase also comes with a sample dataset you can get started with.`}
+          <div className="Form-field mb4">
+            <div>{t`Are you ready to start exploring your data? Add it below.`}</div>
+            <div>{t`Not ready? Skip and play around with our Sample Dataset.`}</div>
           </div>
 
           <Databases.Form
             formName={formName}
-            form={Databases.forms.connection}
+            form={Databases.forms.setup}
             database={databaseDetails}
             onSubmit={this.handleSubmit}
           >
-            {({ values, formFields, Form, FormField, FormFooter }) => (
+            {({ formFields, Form, FormField, FormFooter }) => (
               <Form>
                 {formFields.map(({ name }) => (
                   <FormField key={name} name={name} />
                 ))}
-                {values.engine && <FormFooter submitTitle={t`Next`} />}
+                {
+                  <FormFooter
+                    isReverse={true}
+                    submitTitle={t`Connect database`}
+                    cancelTitle={t`Skip`}
+                    onCancel={this.skipDatabase}
+                  />
+                }
               </Form>
             )}
           </Databases.Form>
-
-          <div className="mt2">
-            <a className="link" onClick={this.skipDatabase}>
-              {t`I'll add my data later`}
-            </a>
-          </div>
         </Box>
       );
     }

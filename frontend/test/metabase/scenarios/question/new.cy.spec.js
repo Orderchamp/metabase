@@ -1,11 +1,12 @@
 import {
   browse,
-  restore,
-  popover,
-  visualize,
+  enterCustomColumnDetails,
+  getBinningButtonForDimension,
   openOrdersTable,
   openReviewsTable,
-  getBinningButtonForDimension,
+  popover,
+  restore,
+  visualize,
 } from "__support__/e2e/cypress";
 
 import { SAMPLE_DATASET } from "__support__/e2e/cypress_sample_dataset";
@@ -108,7 +109,7 @@ describe("scenarios > question > new", () => {
     describe("on a (simple) question page", () => {
       beforeEach(() => {
         cy.findByText("Simple question").click();
-        cy.findByPlaceholderText("Search for a table...").type("Ord");
+        cy.findByPlaceholderText("Search for a table…").type("Ord");
       });
 
       it("should allow to search saved questions", () => {
@@ -120,6 +121,8 @@ describe("scenarios > question > new", () => {
         cy.findAllByText("Orders")
           .closest("li")
           .findByText("Table in")
+          .parent()
+          .findByTestId("search-result-item-name")
           .click();
         cy.url().should("include", "question#");
         cy.findByText("Sample Dataset");
@@ -130,7 +133,7 @@ describe("scenarios > question > new", () => {
     describe("on a (custom) question page", () => {
       beforeEach(() => {
         cy.findByText("Custom question").click();
-        cy.findByPlaceholderText("Search for a table...").type("Ord");
+        cy.findByPlaceholderText("Search for a table…").type("Ord");
       });
 
       it("should allow to search saved questions", () => {
@@ -144,6 +147,8 @@ describe("scenarios > question > new", () => {
         cy.findAllByText("Orders")
           .closest("li")
           .findByText("Table in")
+          .parent()
+          .findByTestId("search-result-item-name")
           .click();
 
         visualize();
@@ -159,7 +164,7 @@ describe("scenarios > question > new", () => {
         expect("Unexpected call to /api/search").to.be.false;
       });
       cy.findByText("Custom question").click();
-      cy.findByPlaceholderText("Search for a table...").type("  ");
+      cy.findByPlaceholderText("Search for a table…").type("  ");
     });
   });
 
@@ -187,7 +192,7 @@ describe("scenarios > question > new", () => {
       });
 
       it("should perform a search scoped to saved questions", () => {
-        cy.findByPlaceholderText("Search for a question").type("Grouped");
+        cy.findByPlaceholderText("Search for a question…").type("Grouped");
         cy.findByText("Orders, Count, Grouped by Created At (year)").click();
         cy.findByText("1,994");
       });
@@ -230,7 +235,7 @@ describe("scenarios > question > new", () => {
       });
 
       it("should perform a search scoped to saved questions", () => {
-        cy.findByPlaceholderText("Search for a question").type("Grouped");
+        cy.findByPlaceholderText("Search for a question…").type("Grouped");
         cy.findByText("Orders, Count, Grouped by Created At (year)").click();
 
         visualize();
@@ -432,7 +437,7 @@ describe("scenarios > question > new", () => {
         .contains("Custom Expression")
         .click();
       popover().within(() => {
-        cy.get("[contentEditable=true]").type("2 * Max([Total])");
+        enterCustomColumnDetails({ formula: "2 * Max([Total])" });
         cy.findByPlaceholderText("Name (required)").type("twice max total");
         cy.findByText("Done").click();
       });
@@ -452,34 +457,32 @@ describe("scenarios > question > new", () => {
         .contains("Custom Expression")
         .click();
       popover().within(() => {
-        cy.get("[contentEditable=true]")
+        cy.get(".ace_text-input")
           .type(FORMULA)
           .blur();
 
         cy.log("Fails after blur in v0.36.6");
         // Implicit assertion
-        cy.get("[contentEditable=true]").contains(FORMULA);
+        cy.contains(FORMULA);
       });
     });
 
-    it.skip("distinct inside custom expression should suggest non-numeric types (metabase#13469)", () => {
+    it("distinct inside custom expression should suggest non-numeric types (metabase#13469)", () => {
       openReviewsTable({ mode: "notebook" });
       cy.findByText("Summarize").click();
       popover()
         .contains("Custom Expression")
         .click();
 
-      cy.get("[contentEditable=true]")
-        .click()
-        .type("Distinct([R");
+      enterCustomColumnDetails({ formula: "Distinct([R" });
 
       cy.log(
         "**The point of failure for ANY non-numeric value reported in v0.36.4**",
       );
       // the default type for "Reviewer" is "No semantic type"
-      cy.findByText("Fields")
-        .parent()
-        .contains("Reviewer");
+      popover().within(() => {
+        cy.contains("Reviewer");
+      });
     });
 
     it.skip("summarizing by distinct datetime should allow granular selection (metabase#13098)", () => {

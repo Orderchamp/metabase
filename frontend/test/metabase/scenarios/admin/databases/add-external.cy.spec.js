@@ -1,4 +1,4 @@
-import { restore, modal, typeAndBlurUsingLabel } from "__support__/e2e/cypress";
+import { restore, typeAndBlurUsingLabel } from "__support__/e2e/cypress";
 
 describe("admin > database > add > external databases", () => {
   beforeEach(() => {
@@ -17,7 +17,7 @@ describe("admin > database > add > external databases", () => {
     cy.contains("PostgreSQL").click({ force: true });
     cy.contains("Additional JDBC connection string options");
 
-    typeAndBlurUsingLabel("Name", "QA Postgres12");
+    typeAndBlurUsingLabel("Display name", "QA Postgres12");
     typeAndBlurUsingLabel("Host", "localhost");
     typeAndBlurUsingLabel("Port", "5432");
     typeAndBlurUsingLabel("Database name", "sample");
@@ -30,11 +30,8 @@ describe("admin > database > add > external databases", () => {
 
     cy.wait("@createDatabase");
 
-    cy.url().should("match", /\/admin\/databases\?created=\d+$/);
-    cy.findByText("Your database has been added!");
-    modal()
-      .contains("I'm good thanks")
-      .click();
+    cy.url().should("match", /\/admin\/databases$/);
+    cy.findByText("QA Postgres12");
   });
 
   it("should add Mongo database and redirect to listing", () => {
@@ -44,15 +41,15 @@ describe("admin > database > add > external databases", () => {
       .find("a")
       .click();
     cy.contains("MongoDB").click({ force: true });
-    cy.contains("Additional Mongo connection");
+    cy.contains("Additional connection string options");
 
-    typeAndBlurUsingLabel("Name", "QA Mongo4");
+    typeAndBlurUsingLabel("Display name", "QA Mongo4");
     typeAndBlurUsingLabel("Host", "localhost");
     typeAndBlurUsingLabel("Port", "27017");
     typeAndBlurUsingLabel("Database name", "sample");
     typeAndBlurUsingLabel("Username", "metabase");
     typeAndBlurUsingLabel("Password", "metasample123");
-    typeAndBlurUsingLabel("Authentication Database", "admin");
+    typeAndBlurUsingLabel("Authentication database (optional)", "admin");
 
     cy.findByText("Save")
       .should("not.be.disabled")
@@ -60,11 +57,8 @@ describe("admin > database > add > external databases", () => {
 
     cy.wait("@createDatabase");
 
-    cy.url().should("match", /\/admin\/databases\?created=\d+$/);
-    cy.findByText("Your database has been added!");
-    modal()
-      .contains("I'm good thanks")
-      .click();
+    cy.url().should("match", /\/admin\/databases$/);
+    cy.findByText("QA Mongo4");
   });
 
   it("should add MySQL database and redirect to listing", () => {
@@ -76,7 +70,7 @@ describe("admin > database > add > external databases", () => {
     cy.contains("MySQL").click({ force: true });
     cy.contains("Additional JDBC connection string options");
 
-    typeAndBlurUsingLabel("Name", "QA MySQL8");
+    typeAndBlurUsingLabel("Display name", "QA MySQL8");
     typeAndBlurUsingLabel("Host", "localhost");
     typeAndBlurUsingLabel("Port", "3306");
     typeAndBlurUsingLabel("Database name", "sample");
@@ -96,10 +90,7 @@ describe("admin > database > add > external databases", () => {
 
     cy.wait("@createDatabase");
 
-    cy.url().should("match", /\/admin\/databases\?created=\d+$/);
-    cy.contains("Your database has been added!");
-    modal()
-      .contains("I'm good thanks")
-      .click();
+    cy.url().should("match", /\/admin\/databases$/);
+    cy.findByText("QA MySQL8");
   });
 });

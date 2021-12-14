@@ -45,10 +45,7 @@ const mapDispatchToProps = {
   reloadSettings,
 };
 
-@connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)
+@connect(mapStateToProps, mapDispatchToProps)
 @title(({ activeSection }) => activeSection && activeSection.name)
 export default class SettingsEditorApp extends Component {
   layout = null; // the reference to AdminLayout
@@ -79,6 +76,15 @@ export default class SettingsEditorApp extends Component {
     // TODO: mutation bad!
     setting.value = newValue;
     try {
+      if (setting.onBeforeChanged) {
+        await setting.onBeforeChanged(
+          oldValue,
+          newValue,
+          settingValues,
+          this.handleChangeSetting,
+        );
+      }
+
       await updateSetting(setting);
 
       if (setting.onChanged) {

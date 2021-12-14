@@ -6,25 +6,23 @@ import { t } from "ttag";
 import { color } from "metabase/lib/colors";
 import { trackStructEvent } from "metabase/lib/analytics";
 import MetabaseSettings from "metabase/lib/settings";
-import { b64hash_to_utf8 } from "metabase/lib/encoding";
 
 import AddDatabaseHelpCard from "metabase/components/AddDatabaseHelpCard";
-import DriverWarning from "metabase/components/DriverWarning";
 import ExternalLink from "metabase/components/ExternalLink";
 import LogoIcon from "metabase/components/LogoIcon";
 import NewsletterForm from "metabase/components/NewsletterForm";
-
-import DatabaseSchedulingStep from "metabase/setup/components/DatabaseSchedulingStep";
 
 import LanguageStep from "./LanguageStep";
 import UserStep from "./UserStep";
 import DatabaseConnectionStep from "./DatabaseConnectionStep";
 import PreferencesStep from "./PreferencesStep";
 import { AddDatabaseHelpCardHolder } from "./Setup.styled";
+
+import { SetupApi } from "metabase/services";
+
 import {
   COMPLETED_STEP_NUMBER,
   DATABASE_CONNECTION_STEP_NUMBER,
-  DATABASE_SCHEDULING_STEP_NUMBER,
   LANGUAGE_STEP_NUMBER,
   PREFERENCES_STEP_NUMBER,
   USER_STEP_NUMBER,
@@ -43,12 +41,11 @@ export default class Setup extends Component {
     databaseFormName: PropTypes.string.isRequired,
     databaseDetails: PropTypes.object,
     selectedDatabaseEngine: PropTypes.string,
+    setDatabaseEngine: PropTypes.func,
   };
 
   constructor(props) {
     super(props);
-
-    this.databaseSchedulingStepContainer = React.createRef();
   }
 
   completeWelcome() {
@@ -56,10 +53,10 @@ export default class Setup extends Component {
     trackStructEvent("Setup", "Welcome");
   }
 
-  componentDidMount() {
-    this.setDefaultLanguage();
-    this.setDefaultDetails();
+  async componentDidMount() {
     this.trackStepSeen();
+    this.setDefaultLanguage();
+    await this.setDefaultDetails();
   }
 
   setDefaultLanguage() {
@@ -81,14 +78,11 @@ export default class Setup extends Component {
     }
   }
 
-  setDefaultDetails() {
-    const { hash } = this.props.location;
-
-    try {
-      const userDetails = hash && JSON.parse(b64hash_to_utf8(hash));
+  async setDefaultDetails() {
+    const token = this.props.location.hash.replace(/^#/, "");
+    if (token) {
+      const userDetails = await SetupApi.user_defaults({ token });
       this.setState({ defaultDetails: userDetails });
-    } catch (e) {
-      this.setState({ defaultDetails: undefined });
     }
   }
 
@@ -118,16 +112,6 @@ export default class Setup extends Component {
 
     if (activeStep !== prevProps.activeStep) {
       this.trackStepSeen();
-
-      // If we are entering the scheduling step, we need to scroll to the top of scheduling step container
-      if (activeStep === DATABASE_CONNECTION_STEP_NUMBER) {
-        setTimeout(() => {
-          if (this.databaseSchedulingStepContainer.current) {
-            const node = this.databaseSchedulingStepContainer.current;
-            node && node.scrollIntoView && node.scrollIntoView();
-          }
-        }, 10);
-      }
     }
 
     if (setupComplete && !prevProps.setupComplete) {
@@ -141,7 +125,6 @@ export default class Setup extends Component {
       activeStep,
       setupComplete,
       databaseFormName,
-      databaseDetails,
       selectedDatabaseEngine,
       userDetails,
     } = this.props;
@@ -199,18 +182,6 @@ export default class Setup extends Component {
                 formName={databaseFormName}
               />
 
-              {/* Have the ref for scrolling in UNSAFE_componentWillReceiveProps */}
-              <div ref={this.databaseSchedulingStepContainer}>
-                {/* Show db scheduling step only if the user has explicitly set the "Let me choose when Metabase syncs and scans" toggle to true */}
-                {databaseDetails &&
-                  databaseDetails.details &&
-                  databaseDetails.details["let-user-control-scheduling"] && (
-                    <DatabaseSchedulingStep
-                      {...this.props}
-                      stepNumber={DATABASE_SCHEDULING_STEP_NUMBER}
-                    />
-                  )}
-              </div>
               <PreferencesStep
                 {...this.props}
                 stepNumber={PREFERENCES_STEP_NUMBER}
@@ -249,11 +220,6 @@ export default class Setup extends Component {
                 border: `1px solid ${color("border")}`,
                 backgroundColor: color("white"),
               }}
-            />
-            <DriverWarning
-              engine={selectedDatabaseEngine}
-              ml={26}
-              data-testid="database-setup-driver-warning"
             />
           </AddDatabaseHelpCardHolder>
         </div>

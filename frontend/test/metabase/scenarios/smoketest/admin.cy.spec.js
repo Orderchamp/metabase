@@ -17,7 +17,9 @@ describe("metabase-smoketest > admin", () => {
       cy.visit("/");
       cy.findByText("Welcome to Metabase");
       cy.url().should("not.include", "login");
-      cy.findByText("Let's get started").click();
+      cy.findByText("Let's get started")
+        .should("be.visible")
+        .click();
 
       // Language
 
@@ -45,16 +47,16 @@ describe("metabase-smoketest > admin", () => {
       // Database
 
       cy.findByText("Add your data");
-      cy.findByText("I'll add my data later");
+      cy.findByText("Skip");
 
-      cy.findByText("Select a database").click();
+      cy.findByText("Show more options").click();
       cy.findByText("H2").click();
-      cy.findByLabelText("Name").type("Metabase H2");
+      cy.findByLabelText("Display name").type("Metabase H2");
 
       const dbFilename = "frontend/test/__runner__/empty.db";
       const dbPath = Cypress.config("fileServerFolder") + "/" + dbFilename;
       cy.findByLabelText("Connection String").type(`file:${dbPath}`);
-      cy.findByText("Next").click();
+      cy.findByText("Connect database").click();
 
       // Turns off anonymous data collection
       cy.findByLabelText(

@@ -82,15 +82,6 @@ describe("scenarios > dashboard > parameters", () => {
     popover()
       .contains("Add filter")
       .click();
-
-    // There should be 0 orders from someone named "Gadget"
-    cy.get(".DashCard")
-      .first()
-      .contains("0");
-    // There should be 4939 orders for a product that is a gadget
-    cy.get(".DashCard")
-      .last()
-      .contains("4,939");
   });
 
   it("should query with a 2 argument parameter", () => {
@@ -459,6 +450,23 @@ describe("scenarios > dashboard > parameters", () => {
     cy.findByText("You're editing this dashboard.").should("not.exist");
 
     cy.findByText("Baker").should("not.exist");
+  });
+
+  describe("when the user does not have self service data permissions", () => {
+    beforeEach(() => {
+      cy.visit("/dashboard/1");
+      addCityFilterWithDefault();
+
+      cy.signIn("nodata");
+      cy.reload();
+    });
+
+    it("should not see mapping options", () => {
+      cy.icon("pencil").click();
+      cy.findByText("Location").click({ force: true });
+
+      cy.icon("key");
+    });
   });
 });
 

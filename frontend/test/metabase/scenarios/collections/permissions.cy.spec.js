@@ -49,7 +49,9 @@ describe("collection permissions", () => {
                     displaySidebarChildOf("First collection");
                     displaySidebarChildOf("Second collection");
                   });
-                  cy.icon("add").click();
+                  cy.get(".Nav").within(() => {
+                    cy.icon("add").click();
+                  });
                   cy.findByText("New dashboard").click();
                   cy.get(".AdminSelect").findByText("Second collection");
                 });
@@ -167,9 +169,10 @@ describe("collection permissions", () => {
                     cy.visit("collection/root");
                     openEllipsisMenuFor("Orders");
                     cy.findByText("Archive this item").click();
-                    cy.findByText("Archived question")
-                      .siblings(".Icon-close")
-                      .click();
+                    cy.findByTestId("toast-undo").within(() => {
+                      cy.findByText("Archived question");
+                      cy.icon("close").click();
+                    });
                     cy.findByText("View archive").click();
                     cy.location("pathname").should("eq", "/archive");
                     cy.findByText("Orders");
@@ -241,7 +244,9 @@ describe("collection permissions", () => {
                       .as("title")
                       .contains("Third collection");
                     // Creating new sub-collection at this point shouldn't be possible
-                    cy.icon("new_folder").should("not.exist");
+                    cy.findByTestId("collection-menu").within(() => {
+                      cy.icon("add").should("not.exist");
+                    });
                     // We shouldn't be able to change permissions for an archived collection (the root issue of #12489!)
                     cy.icon("lock").should("not.exist");
                     /**

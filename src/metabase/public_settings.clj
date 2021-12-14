@@ -1,5 +1,8 @@
 (ns metabase.public-settings
-  (:require [clojure.string :as str]
+  (:require [cheshire.core :as json]
+            [clj-http.client :as http]
+            [clojure.core.memoize :as memoize]
+            [clojure.string :as str]
             [clojure.tools.logging :as log]
             [java-time :as t]
             [metabase.config :as config]
@@ -57,7 +60,7 @@
   (deferred-tru "The name used for this instance of Metabase.")
   :default "Metabase")
 
-(defn- uuid-nonce
+(defn uuid-nonce
   "Getter for settings that should be set to a UUID the first time they are fetched."
   [setting]
   (or (setting/get-string setting)
@@ -73,14 +76,6 @@
   :setter     :none
   ;; magic getter will either fetch value from DB, or if no value exists, set the value to a random UUID.
   :getter     #(uuid-nonce :site-uuid))
-
-(defsetting analytics-uuid
-  (str (deferred-tru "Unique identifier to be used in Snowplow analytics, to identify this instance of Metabase.")
-       " "
-       (deferred-tru "This is a public setting since some analytics events are sent prior to initial setup."))
-  :visibility :public
-  :setter     :none
-  :getter     #(uuid-nonce :analytics-uuid))
 
 (defn- normalize-site-url [^String s]
   (let [ ;; remove trailing slashes
@@ -141,6 +136,13 @@
 (defsetting ga-code
   (deferred-tru "Google Analytics tracking code.")
   :default    "UA-60817802-1"
+  :visibility :public)
+
+(defsetting ga-enabled
+  (deferred-tru "Boolean indicating whether analytics data should be sent to Google Analytics on the frontend")
+  :type       :boolean
+  :setter     :none
+  :getter     (fn [] (and config/is-prod? (anon-tracking-enabled)))
   :visibility :public)
 
 (defsetting map-tile-server-url
@@ -225,6 +227,10 @@
   :type    :integer
   :default 10)
 
+(defsetting engine-deprecation-notice-version
+  (deferred-tru "Metabase version for which a notice about usage of a deprecated driver has been shown.")
+  :visibility :admin)
+
 (defsetting application-name
   (deferred-tru "This will replace the word \"Metabase\" wherever it appears.")
   :visibility :public
@@ -303,6 +309,12 @@
 
 (defsetting show-homepage-xrays
   (deferred-tru "Whether or not to display x-ray suggestions on the homepage. They will also be hidden if any dashboards are pinned. Admins might hide this to direct users to better content than raw data")
+  :type       :boolean
+  :default    true
+  :visibility :authenticated)
+
+(defsetting show-homepage-pin-message
+  (deferred-tru "Whether or not to display a message about pinning dashboards. It will also be hidden if any dashboards are pinned. Admins might hide this to direct users to better content than raw data")
   :type       :boolean
   :default    true
   :visibility :authenticated)
@@ -419,3 +431,42 @@
   :visibility :public
   :type       :integer
   :default    180)
+
+(defsetting cloud-gateway-ips-url
+  "Store URL for fetching the list of Cloud gateway IP addresses"
+  :visibility :internal
+  :setter     :none
+  :default    (str premium-features/store-url "/static/cloud_gateways.json"))
+
+(def ^:private fetch-cloud-gateway-ips-fn
+  (memoize/ttl
+   (fn []
+       (when (premium-features/is-hosted?)
+         (try
+           (-> (http/get (cloud-gateway-ips-url))
+               :body
+               (json/parse-string keyword)
+               :ip_addresses)
+           (catch Exception e
+             (log/error e (trs "Error fetching Metabase Cloud gateway IP addresses:"))))))
+   :ttl/threshold (* 1000 60 60 24)))
+
+(defsetting cloud-gateway-ips
+  (deferred-tru "Metabase Cloud gateway IP addresses, to configure connections to DBs behind firewalls")
+  :visibility :public
+  :type       :json
+  :setter     :none
+  :getter     fetch-cloud-gateway-ips-fn)
+
+(defsetting show-database-syncing-modal
+  (str (deferred-tru "Whether an introductory modal should be shown after the next database connection is added.")
+       " "
+       (deferred-tru "Defaults to false if any non-default database connections already exist for this instance."))
+  :visibility :admin
+  :type       :boolean
+  :getter     (fn []
+                (let [v (setting/get-boolean :show-database-syncing-modal)]
+                  (if (nil? v)
+                    (not (db/exists? 'Database :is_sample false))
+                    ;; frontend should set this value to `true` after the modal has been shown once
+                    v))))

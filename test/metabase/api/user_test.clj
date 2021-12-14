@@ -761,7 +761,7 @@
 
     (testing (str "test that when disabling Google auth if a user gets disabled and re-enabled they are no longer "
                   "Google Auth (#3323)")
-      (mt/with-temporary-setting-values [google-auth-client-id "ABCDEFG"]
+      (mt/with-temporary-setting-values [google-auth-client-id "pretend-client-id.apps.googleusercontent.com"]
         (mt/with-temp User [user {:google_auth true}]
           (db/update! User (u/the-id user)
             :is_active false)
@@ -839,25 +839,31 @@
 ;;; |                  Other Endpoints -- PUT /api/user/:id/qpnewb, POST /api/user/:id/send_invite                   |
 ;;; +----------------------------------------------------------------------------------------------------------------+
 
-(deftest update-qbnewb-test
-  (testing "PUT /api/user/:id/qbnewb"
-    (testing "Test that we can set the QB newb status of ourselves"
-      (mt/with-temp User [{:keys [id]} {:first_name (mt/random-name)
-                                        :last_name  (mt/random-name)
-                                        :email      "def@metabase.com"
-                                        :password   "def123"}]
-        (let [creds {:username "def@metabase.com"
-                     :password "def123"}]
-          (testing "response"
-            (is (= {:success true}
-                   (mt/client creds :put 200 (format "user/%d/qbnewb" id)))))
-          (testing "newb?"
-            (is (= false
-                   (db/select-one-field :is_qbnewb User, :id id)))))))
+(deftest update-user-modal-test
+  (doseq [[endpoint property] [["qbnewb" :is_qbnewb]
+                               ["datasetnewb" :is_datasetnewb]]]
+    (testing (str "PUT /api/user/:id/modal/" endpoint)
+      (testing "Test that we can set the QB newb status of ourselves"
+        (mt/with-temp User [{:keys [id]} {:first_name (mt/random-name)
+                                          :last_name  (mt/random-name)
+                                          :email      "def@metabase.com"
+                                          :password   "def123"}]
+          (let [creds {:username "def@metabase.com"
+                       :password "def123"}]
+            (testing "defaults to true"
+              (is (true? (db/select-one-field property User, :id id))))
+            (testing "response"
+              (is (= {:success true}
+                     (mt/client creds :put 200 (format "user/%d/modal/%s" id endpoint)))))
+            (testing (str endpoint "?")
+              (is (false? (db/select-one-field property User, :id id)))))))
 
-    (testing "shouldn't be allowed to set someone else's QB newb status"
-      (is (= "You don't have permissions to do that."
-             (mt/user-http-request :rasta :put 403 (format "user/%d/qbnewb" (mt/user->id :trashbird))))))))
+      (testing "shouldn't be allowed to set someone else's status"
+        (is (= "You don't have permissions to do that."
+               (mt/user-http-request :rasta :put 403
+                                     (format "user/%d/modal/endpoint"
+                                             (mt/user->id :trashbird)
+                                             endpoint))))))))
 
 (deftest send-invite-test
   (testing "POST /api/user/:id/send_invite"
